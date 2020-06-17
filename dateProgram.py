@@ -17,19 +17,54 @@ def start(f):
         userInput = input("Please enter a new starting date: ")
         parsedDate = parseDateInput(userInput)
     result = ""
-    firstBeginEventFound = False
     firstEndEventFound = False
     offset = 0
     for line in f:
         result += line
-        if line == "BEGIN:VEVENT\n":
-            firstBeginEventFound = True
         if "DTSTART;" in line:
-            print('in start')
+            lineSplit = line.split(":")
+            first = lineSplit[:-1]
+            last = lineSplit[-1]
+            if(firstEndEventFound):
+                # If true, then offset is initialized already. Otherwise, get offset
+                newDate = updateDate(last, offset)
+            else:
+                # offset not initialized yet. declare here
+                offset = setOffset(last, parsedDate)
+                newDate = updateDate(last, offset)
         if "DTEND;" in line:
-            print('in end')
+            print(line.split(':')[-1])
+        if line == "END:VEVENT\n":
+            firstEndEventFound = True
 
-def iterateFile():
+def setOffset(a, parsedDate):
+    yearA = int(a[:4])
+    monthA = int(a[4:6])
+    dayA = int(a[6:8])
+    yearB = 0
+    monthB = 0
+    dayB = 0
+    if(len(parsedDate) == 4):
+        yearB = yearA
+        monthB = int(parsedDate[:2])
+        dayB = int(parsedDate[2:])
+    else:
+        yearB = int(parsedDate[:4])
+        monthB = int(parsedDate[4:6])
+        dayB = int(parsedDate[6:8])
+    offsetYear = yearB - yearA
+    offsetMonth = monthB - monthA
+    offsetDay = dayB - dayA
+    return [offsetYear, offsetMonth, offsetDay]
+
+def updateDate(a, offset):
+    year = int(a[:4]) + offset[0]
+    month = int(a[4:6]) + offset[1]
+    day = int(a[6:8]) + offset[2]
+    result = stringifyDate(year, month, day)
+    return "{}{}".format(result, a[8:])
+
+def stringifyDate(year, month, day):
     pass
 
 def parseDateInput(userInput):
