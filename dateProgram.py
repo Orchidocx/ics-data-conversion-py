@@ -35,7 +35,6 @@ def start(f, fName):
             else:
                 # offset not initialized yet. declare here
                 offset = setOffset(last, parsedDate)
-                print(offset)
                 newDate = updateDate(last, offset)
                 result += "{}:{}".format("".join(first), newDate)
         elif ("DTEND" in line and firstBeginEventFound):
@@ -46,9 +45,17 @@ def start(f, fName):
             firstEndEventFound = True
         else:
             result += line
+    writeFile(result, fName)
+    
+
+def writeFile(str, fName):
     newFile = open("{}-revised.ics".format(fName), "w+")
-    newFile.write(result)
+    newFile.write(str)
     newFile.close()
+    endFooter(fName)
+
+def endFooter(fName):
+    print("Successfully created new .ics as: \n\t{}-revised.ics".format(fName))
 
 def setOffset(a, parsedDate):
     yearA = int(a[:4])
