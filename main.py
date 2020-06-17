@@ -5,5 +5,5 @@ import dateProgram
 if __name__ == "__main__":
     userInput = helper.stringifyExtension(input("Enter .ics file name: "), "ics")
     f = helper.validateFile(userInput, ".ics")
-    dateProgram.start(f)
+    dateProgram.start(f, userInput)
     f.close()

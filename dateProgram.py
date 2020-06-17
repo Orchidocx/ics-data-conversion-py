@@ -6,7 +6,7 @@ def showInstructions():
     print("MM/DD/YYYY\tMM/DD/YY\tMM/DD")
     print("MM-DD-YYYY\tMM-DD/YY\tMM-DD")
 
-def start(f):
+def start(f, fName):
     showBanner()
     showInstructions()
     userInput = input("Please enter a new starting date: ")
@@ -17,25 +17,38 @@ def start(f):
         userInput = input("Please enter a new starting date: ")
         parsedDate = parseDateInput(userInput)
     result = ""
+    firstBeginEventFound = False
     firstEndEventFound = False
     offset = 0
     for line in f:
-        result += line
-        if "DTSTART;" in line:
+        if (line=="BEGIN:VEVENT\n"):
+            result += line
+            firstBeginEventFound = True
+        elif ("DTSTART" in line and firstBeginEventFound):
             lineSplit = line.split(":")
             first = lineSplit[:-1]
             last = lineSplit[-1]
             if(firstEndEventFound):
                 # If true, then offset is initialized already. Otherwise, get offset
                 newDate = updateDate(last, offset)
+                result += "{}:{}".format("".join(first), newDate)
             else:
                 # offset not initialized yet. declare here
                 offset = setOffset(last, parsedDate)
+                print(offset)
                 newDate = updateDate(last, offset)
-        if "DTEND;" in line:
-            print(line.split(':')[-1])
-        if line == "END:VEVENT\n":
+                result += "{}:{}".format("".join(first), newDate)
+        elif ("DTEND" in line and firstBeginEventFound):
+            newDate = updateDate(last, offset)
+            result += "{}:{}".format("".join(first), newDate)
+        elif line == "END:VEVENT\n":
+            result += line
             firstEndEventFound = True
+        else:
+            result += line
+    newFile = open("{}-revised.ics".format(fName), "w+")
+    newFile.write(result)
+    newFile.close()
 
 def setOffset(a, parsedDate):
     yearA = int(a[:4])
@@ -65,7 +78,62 @@ def updateDate(a, offset):
     return "{}{}".format(result, a[8:])
 
 def stringifyDate(year, month, day):
-    pass
+    while (month < 1 or month > 12):
+        if (month > 12):
+            year+=1
+            month-=12
+        elif(month < 1):
+            year-=1
+            month+=12
+    daysInMonth = getDaysInMonth(month, year)
+    while(day < 1 or day > daysInMonth):
+        if(day > daysInMonth):
+            month+=1
+            day-=daysInMonth
+            year = updateYear(month, year)
+            month = updateMonth(month)
+            daysInMonth = getDaysInMonth(month, year)
+        elif(day < 1):
+            month-=1
+            year = updateYear(month, year)
+            month = updateMonth(month)
+            daysInMonth = getDaysInMonth(month, year)
+            day+=daysInMonth
+    return "{:04d}{:02d}{:02d}".format(year, month, day)
+
+def updateMonth(month):
+    while (month < 1 or month > 12):
+        if (month > 12):
+            month-=12
+        elif(month < 1):
+            month+=12
+    return month
+
+def updateYear(month, year):
+    while (month < 1 or month > 12):
+        if (month > 12):
+            year+=1
+        elif(month < 1):
+            year-=1
+    return year
+
+def getDaysInMonth(month, year):
+    daysInMonth = {
+        1: 31,
+        2: 29 if (year%4) == 0 else 28,
+        3: 31,
+        4: 30,
+        5: 31,
+        6: 30,
+        7: 31,
+        8: 31,
+        9: 30,
+        10: 31,
+        11: 30,
+        12: 31
+    }
+    return daysInMonth[month]
+
 
 def parseDateInput(userInput):
     resultArray = []
